@@ -1,5 +1,0 @@
-org/imooc/core/request/IGatewayRequest.class
-org/imooc/core/context/IContext.class
-org/imooc/core/request/GatewayRequest.class
-org/imooc/core/context/BaseContext.class
-org/imooc/core/Bootstrap.class
