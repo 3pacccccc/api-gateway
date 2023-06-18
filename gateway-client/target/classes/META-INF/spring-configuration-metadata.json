@@ -1,0 +1,22 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "org.imooc.gateway.client.core.ApiProperties",
+      "name": "api",
+      "type": "org.imooc.gateway.client.core.ApiProperties"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "org.imooc.gateway.client.core.ApiProperties",
+      "name": "api.env",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "org.imooc.gateway.client.core.ApiProperties",
+      "name": "api.register-address",
+      "type": "java.lang.String"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+
+### custom(忽略如下文件后，jar包中不在包含如下文件 -- 原因-> 因为先删除git缓存，然后没有push到git上导致 -> 疑似拉取gitlab上代码时，检测到在 .gitigonre 中，则不打包在jar中)
+#/src/main/java/com/zbj/account/manager/config/ConfigCenterConfig.java
+#/src/main/resources/application.yml
+/bin/
