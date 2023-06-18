@@ -4,7 +4,7 @@ import org.imooc.common.config.ServiceDefinition;
 import org.imooc.common.config.ServiceInstance;
 
 /**
- * @author maruimin
+ * @author maruiminb
  * @date 2023/5/27 10:52
  */
 public interface RegisterCenter {
