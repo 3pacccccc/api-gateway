@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -35,20 +36,130 @@ public class Rule implements Comparable<Rule>, Serializable {
     private Integer order;
 
     /**
+     * 后端服务ID
+     */
+    private String serviceId;
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public List<String> getPaths() {
+        return paths;
+    }
+
+    public void setPaths(List<String> paths) {
+        this.paths = paths;
+    }
+
+    /**
+     * 请求前缀
+     */
+    private String prefix;
+    /**
+     * 路径集合
+     */
+    private List<String> paths;
+
+    /**
      * 规则优先级
      */
     private Set<FilterConfig> filterConfigs = new HashSet<>();
+
+    private RetryConfig retryConfig = new RetryConfig();
+
+
+    /**
+     * 限流规则
+     */
+    private Set<FlowCtlConfig> flowCtlConfigs =new HashSet<>();
+
+    public RetryConfig getRetryConfig() {
+        return retryConfig;
+    }
+
+    public void setRetryConfig(RetryConfig retryConfig) {
+        this.retryConfig = retryConfig;
+    }
+
+
+    public Set<FlowCtlConfig> getFlowCtlConfigs() {
+        return flowCtlConfigs;
+    }
+
+    public void setFlowCtlConfigs(Set<FlowCtlConfig> flowCtlConfigs) {
+        this.flowCtlConfigs = flowCtlConfigs;
+    }
+
+
+    public static class FlowCtlConfig{
+        /**
+         * 限流类型-可能是path，也可能是IP或者服务
+         */
+        private String type;
+        /**
+         * 限流对象的值
+         */
+        private String value;
+        /**
+         * 限流模式-单机还有分布式
+         */
+        private String model;
+        /**
+         * 限流规则,是一个JSON
+         */
+        private String config;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
+
+        public String getConfig() {
+            return config;
+        }
+
+        public void setConfig(String config) {
+            this.config = config;
+        }
+    }
+
 
     public Rule() {
         super();
     }
 
-    public Rule(String id, String name, String protocol, Integer order, Set<FilterConfig> filterConfigs) {
-        super();
+    public Rule(String id, String name, String protocol, Integer order, String serviceId, String prefix, List<String> paths, Set<FilterConfig> filterConfigs) {
         this.id = id;
         this.name = name;
         this.protocol = protocol;
         this.order = order;
+        this.serviceId = serviceId;
+        this.prefix = prefix;
+        this.paths = paths;
         this.filterConfigs = filterConfigs;
     }
 
@@ -95,6 +206,27 @@ public class Rule implements Comparable<Rule>, Serializable {
             return Objects.hash(id);
         }
 
+    }
+
+    public static class RetryConfig {
+        // 重试次数
+        private int times;
+
+        public int getTimes() {
+            return times;
+        }
+
+        public void setTimes(int times) {
+            this.times = times;
+        }
+    }
+
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
     }
 
     /**

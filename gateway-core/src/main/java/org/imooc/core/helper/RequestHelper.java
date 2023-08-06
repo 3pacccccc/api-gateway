@@ -7,11 +7,13 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.imooc.common.config.DynamicConfigManager;
 import org.imooc.common.config.HttpServiceInvoker;
 import org.imooc.common.config.ServiceDefinition;
 import org.imooc.common.constants.BasicConst;
 import org.imooc.common.constants.GatewayConst;
-import org.imooc.common.constants.GatewayProtocol;
+import org.imooc.common.enums.ResponseCode;
+import org.imooc.common.exception.ResponseException;
 import org.imooc.common.rule.Rule;
 import org.imooc.core.context.GatewayContext;
 import org.imooc.core.request.GatewayRequest;
@@ -32,31 +34,39 @@ public class RequestHelper {
         // 构建请求对象GatewayRequest
         GatewayRequest gatewayRequest = doRequest(request, context);
         // 根据请求对象里面的uniqueId，获取资源服务信息(也就是服务定义信息)
-        ServiceDefinition serviceDefinition = ServiceDefinition.builder()
-                .serviceId("demo")
-                .enable(true)
-                .version("1")
-                .patternPath("**")
-                .envType("dev")
-                .protocol(GatewayProtocol.HTTP)
-                .build();
-
+        ServiceDefinition serviceDefinition = DynamicConfigManager.getInstance().getServiceDefinition(gatewayRequest.getUniqueId());
         // 根据请求对象获取服务定义对应的方法调用，然后获取对应的规则
         HttpServiceInvoker httpServiceInvoker = new HttpServiceInvoker();
         httpServiceInvoker.setInvokerPath(gatewayRequest.getPath());
         httpServiceInvoker.setTimeout(500);
+
+        // 根据请求对象获取规则
+        Rule rule = getRule(gatewayRequest, serviceDefinition.getServiceId());
+
         // 构建GatewayContext对象
         GatewayContext gatewayContext = new GatewayContext(
                 serviceDefinition.getProtocol(),
                 context,
                 HttpUtil.isKeepAlive(request),
                 gatewayRequest,
-                new Rule()
+                rule
         );
 
         // todo 后续服务发现做完，这儿要改成动态的
-        gatewayContext.getRequest().setModifyHost("127.0.0.1:8080");
+//        gatewayContext.getRequest().setModifyHost("127.0.0.1:8080");
         return gatewayContext;
+    }
+
+    private static Rule getRule(GatewayRequest gateWayRequest, String serviceId) {
+        String key = serviceId + "." + gateWayRequest.getPath();
+        Rule rule = DynamicConfigManager.getInstance().getRuleByPath(key);
+        if (rule != null) {
+            return rule;
+        }
+
+        return DynamicConfigManager.getInstance().getRuleByServiceId(serviceId)
+                .stream().filter(r -> gateWayRequest.getPath().startsWith(r.getPrefix()))
+                .findAny().orElseThrow(() -> new ResponseException(ResponseCode.PATH_NO_MATCHED));
     }
 
     private static GatewayRequest doRequest(FullHttpRequest fullHttpRequest, ChannelHandlerContext ctx) {

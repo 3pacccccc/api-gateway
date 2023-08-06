@@ -16,6 +16,8 @@ import org.imooc.common.exception.ResponseException;
 import org.imooc.core.ConfigLoader;
 import org.imooc.core.context.GatewayContext;
 import org.imooc.core.context.HttpRequestWrapper;
+import org.imooc.core.filter.FilterFactory;
+import org.imooc.core.filter.GatewayFilterChainFactory;
 import org.imooc.core.helper.AsyncHttpHelper;
 import org.imooc.core.helper.RequestHelper;
 import org.imooc.core.helper.ResponseHelper;
@@ -30,6 +32,8 @@ import java.util.concurrent.CompletableFuture;
  */
 @Slf4j
 public class NettyCoreProcessor implements NettyProcessor {
+
+    private FilterFactory filterFactory = GatewayFilterChainFactory.getInstance();
     /**
      * 处理请求
      *
@@ -41,7 +45,7 @@ public class NettyCoreProcessor implements NettyProcessor {
         ChannelHandlerContext ctx = wrapper.getCtx();
         try {
             GatewayContext gatewayContext = RequestHelper.doContext(request, ctx);
-            route(gatewayContext);
+            filterFactory.buildFilterChain(gatewayContext).doFilter(gatewayContext);
         } catch (BaseException e) {
             log.error("process error {} {}", e.getCode().getCode(), e.getCode().getMessage());
             FullHttpResponse httpResponse = ResponseHelper.getHttpResponse(e.getCode());
@@ -59,22 +63,6 @@ public class NettyCoreProcessor implements NettyProcessor {
         ctx.writeAndFlush(httpResponse)
                 .addListener(ChannelFutureListener.CLOSE);
         ReferenceCountUtil.release(request);
-    }
-
-    private void route(GatewayContext gatewayContext) {
-        Request request = gatewayContext.getRequest().build();
-        CompletableFuture<Response> future = AsyncHttpHelper.getInstance().executeRequest(request);
-
-        boolean whenComplete = ConfigLoader.getConfig().isWhenComplete();
-        if (whenComplete) {
-            future.whenComplete((response, throwable) -> {
-                complete(request, response, throwable, gatewayContext);
-            });
-        } else {
-            future.whenCompleteAsync((response, throwable) -> {
-                complete(request, response, throwable, gatewayContext);
-            });
-        }
     }
 
     private void complete(Request request, Response response, Throwable throwable, GatewayContext gatewayContext) {

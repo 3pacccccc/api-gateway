@@ -43,12 +43,13 @@ public class Bootstrap {
         });
         configCenter.init(config.getRegistryAddress(), config.getEnv());
         configCenter.subscribeRulesChange(rules -> DynamicConfigManager.getInstance().putAllRule(rules));
-        //连接注册中心，将注册中心的实例加载到本地
-        final RegisterCenter registerCenter = registerAndSubscribe(config);
 
         //启动容器
         Container container = new Container(config);
         container.start();
+
+        //连接注册中心，将注册中心的实例加载到本地
+        final RegisterCenter registerCenter = registerAndSubscribe(config);
 
         //服务优雅关机
         // 收到kill信号的时候调用
@@ -83,6 +84,7 @@ public class Bootstrap {
                         JSON.toJSON(serviceInstanceSet));
                 DynamicConfigManager manager = DynamicConfigManager.getInstance();
                 manager.addServiceInstance(serviceDefinition.getUniqueId(), serviceInstanceSet);
+                manager.putServiceDefinition(serviceDefinition.getUniqueId(), serviceDefinition);
             }
         });
         return registerCenter;

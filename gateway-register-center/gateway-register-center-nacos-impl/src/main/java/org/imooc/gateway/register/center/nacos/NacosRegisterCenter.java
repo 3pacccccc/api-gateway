@@ -21,6 +21,7 @@ import org.imooc.common.constants.GatewayConst;
 import org.imooc.gateway.register.center.api.RegisterCenter;
 import org.imooc.gateway.register.center.api.RegisterCenterListener;
 
+import javax.print.attribute.standard.Severity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -148,7 +149,7 @@ public class NacosRegisterCenter implements RegisterCenter {
                     // nacos事件监听器
                     EventListener eventListener = new NacosRegisterListener();
                     eventListener.onEvent(new NamingEvent(service, null));
-                    namingService.subscribe(service, eventListener);
+                    namingService.subscribe(service, env, eventListener);
                     log.info("subscribe {} {}", serviceList, env);
                 }
 
@@ -170,6 +171,7 @@ public class NacosRegisterCenter implements RegisterCenter {
         public void onEvent(Event event) {
             if (event instanceof NamingEvent namingEvent) {
                 String serviceName = namingEvent.getServiceName();
+                serviceName = serviceName.replace("dev@@", "");
                 try {
                     // 获取服务定义信息
                     Service service = namingMaintainService.queryService(serviceName, env);
