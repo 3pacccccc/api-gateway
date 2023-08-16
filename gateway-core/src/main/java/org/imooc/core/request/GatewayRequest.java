@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.asynchttpclient.RequestBuilder;
@@ -143,6 +144,10 @@ public class GatewayRequest implements IGatewayRequest {
      * 构建下游请求时的Http请构建器
      */
     private final RequestBuilder requestBuilder;
+
+    @Setter
+    @Getter
+    private long userId;
 
     public GatewayRequest(String uniqueId, Charset charset, String clientIp, String host,
                           String uri, HttpMethod method, String contentType, HttpHeaders headers, FullHttpRequest fullHttpRequest) {
@@ -298,6 +303,7 @@ public class GatewayRequest implements IGatewayRequest {
     @Override
     public org.asynchttpclient.Request build() {
         requestBuilder.setUrl(getFinalUrl());
+        requestBuilder.setHeader("userId", String.valueOf(this.userId));
         return requestBuilder.build();
     }
 

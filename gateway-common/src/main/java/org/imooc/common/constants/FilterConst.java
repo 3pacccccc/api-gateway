@@ -6,6 +6,10 @@ package org.imooc.common.constants;
  */
 
 public interface FilterConst {
+    String USER_AUTH_FILTER_ID = "user_auth_filter";
+    String USER_AUTH_FILTER_NAME = "user_auth_filter";
+    int USER_AUTH_FILTER_ORDER = 1;
+
     String LOAD_BALANCE_FILTER_ID = "load_balance_filter";
     String LOAD_BALANCE_FILTER_NAME = "load_balance_filter";
     int LOAD_BALANCE_FILTER_ORDER = 100;

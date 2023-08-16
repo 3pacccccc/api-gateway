@@ -1,6 +1,12 @@
 package org.imooc.core.filter.router;
 
+import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandKey;
+import com.netflix.hystrix.HystrixCommandProperties;
+import com.netflix.hystrix.HystrixThreadPoolProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.imooc.common.constants.FilterConst;
@@ -18,6 +24,7 @@ import org.imooc.core.response.GatewayResponse;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
@@ -40,24 +47,75 @@ public class RouterFilter implements Filter {
      */
     @Override
     public void doFilter(GatewayContext ctx) throws Exception {
-        Request request = ctx.getRequest().build();
+        Optional<Rule.HystrixConfig> hystrixConfig = getHystrixConfig(ctx);
+        if (hystrixConfig.isPresent()) {
+            routeWithHystrix(ctx, hystrixConfig);
+        } else {
+            route(ctx, hystrixConfig);
+        }
+    }
+
+    private void routeWithHystrix(GatewayContext gatewayContext, Optional<Rule.HystrixConfig> hystrixConfig) {
+        HystrixCommand.Setter setter = HystrixCommand.Setter.withGroupKey(HystrixCommandGroupKey
+                        .Factory
+                        .asKey(gatewayContext.getUniqueId()))
+                .andCommandKey(HystrixCommandKey.Factory
+                        .asKey(gatewayContext.getRequest().getPath()))
+                //线程池大小
+                .andThreadPoolPropertiesDefaults(HystrixThreadPoolProperties.Setter()
+                        .withCoreSize(hystrixConfig.get().getThreadCoreSize()))
+                .andCommandPropertiesDefaults(HystrixCommandProperties.Setter()
+                        //线程池
+                        .withExecutionIsolationStrategy(HystrixCommandProperties.ExecutionIsolationStrategy.THREAD)
+                        //超时时间
+                        .withExecutionTimeoutInMilliseconds(hystrixConfig.get().getTimeoutInMilliseconds())
+                        .withExecutionIsolationThreadInterruptOnTimeout(true)
+                        .withExecutionTimeoutEnabled(true));
+
+        new HystrixCommand<Objects>(setter) {
+
+            @Override
+            protected Objects run() throws Exception {
+                route(gatewayContext, hystrixConfig).get();
+                return null;
+            }
+
+            @Override
+            protected Objects getFallback() {
+                gatewayContext.setResponse(hystrixConfig);
+                gatewayContext.writtened();
+                return null;
+            }
+        }.execute();
+    }
+
+    private  CompletableFuture<Response> route(GatewayContext gatewayContext,Optional<Rule.HystrixConfig> hystrixConfig){
+        Request request = gatewayContext.getRequest().build();
         CompletableFuture<Response> future = AsyncHttpHelper.getInstance().executeRequest(request);
         boolean whenComplete = ConfigLoader.getConfig().isWhenComplete();
         if (whenComplete) {
             future.whenComplete((response, throwable) -> {
-                complete(request, response, throwable, ctx);
+                complete(request, response, throwable, gatewayContext,hystrixConfig);
             });
         } else {
             future.whenCompleteAsync((response, throwable) -> {
-                complete(request, response, throwable, ctx);
+                complete(request, response, throwable, gatewayContext,hystrixConfig);
             });
         }
+        return future;
+    }
+
+    private static Optional<Rule.HystrixConfig> getHystrixConfig(GatewayContext gatewayContext) {
+        Rule rule = gatewayContext.getRule();
+        return rule.getHystrixConfigs().stream().filter(
+                        c -> StringUtils.equals(c.getPath(), gatewayContext.getRequest().getPath()))
+                .findFirst();
     }
 
     private void complete(Request request,
                           Response response,
                           Throwable throwable,
-                          GatewayContext gatewayContext) {
+                          GatewayContext gatewayContext, Optional<Rule.HystrixConfig> hystrixConfig) {
         gatewayContext.releaseRequest();
 //        Rule rule = gatewayContext.getRule();
 //        int currentRetryTimes = gatewayContext.getCurrentRetryTimes();

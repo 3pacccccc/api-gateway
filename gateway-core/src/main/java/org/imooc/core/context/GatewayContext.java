@@ -29,11 +29,10 @@ public class GatewayContext extends BasicContext {
         this.currentRetryTimes = currentRetryTimes;
     }
 
-    public GatewayContext(String protocol, ChannelHandlerContext nettyCtx, boolean keepAlive, GatewayRequest request, Rule rule, int currentRetryTimes) {
+    public GatewayContext(String protocol, ChannelHandlerContext nettyCtx, boolean keepAlive, GatewayRequest request, Rule rule) {
         super(protocol, nettyCtx, keepAlive);
         this.request = request;
         this.rule = rule;
-        this.currentRetryTimes = currentRetryTimes;
     }
 
     public static class Builder {
@@ -80,7 +79,7 @@ public class GatewayContext extends BasicContext {
             AssertUtil.notNull(nettyCtx, "nettyCtx不能为空");
             AssertUtil.notNull(request, "request不能为空");
             AssertUtil.notNull(rule, "rule不能为空");
-            return new GatewayContext(protocol, nettyCtx, keepAlive, request, rule, 0);
+            return new GatewayContext(protocol, nettyCtx, keepAlive, request, rule);
         }
     }
 

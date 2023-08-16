@@ -3,6 +3,7 @@ package org.imooc.common.rule;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.rmi.registry.Registry;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -76,7 +77,9 @@ public class Rule implements Comparable<Rule>, Serializable {
     /**
      * 限流规则
      */
-    private Set<FlowCtlConfig> flowCtlConfigs =new HashSet<>();
+    private Set<FlowCtlConfig> flowCtlConfigs = new HashSet<>();
+
+    private Set<HystrixConfig> hystrixConfigs = new HashSet<>();
 
     public RetryConfig getRetryConfig() {
         return retryConfig;
@@ -86,6 +89,14 @@ public class Rule implements Comparable<Rule>, Serializable {
         this.retryConfig = retryConfig;
     }
 
+    public Set<HystrixConfig> getHystrixConfigs() {
+        return hystrixConfigs;
+    }
+
+
+    public void setHystrixConfigs(Set<HystrixConfig> hystrixConfigs) {
+        this.hystrixConfigs = hystrixConfigs;
+    }
 
     public Set<FlowCtlConfig> getFlowCtlConfigs() {
         return flowCtlConfigs;
@@ -96,7 +107,7 @@ public class Rule implements Comparable<Rule>, Serializable {
     }
 
 
-    public static class FlowCtlConfig{
+    public static class FlowCtlConfig {
         /**
          * 限流类型-可能是path，也可能是IP或者服务
          */
@@ -219,6 +230,14 @@ public class Rule implements Comparable<Rule>, Serializable {
         public void setTimes(int times) {
             this.times = times;
         }
+    }
+
+    @Data
+    public static class HystrixConfig {
+        private String path;
+        private int timeoutInMilliseconds;
+        private int threadCoreSize;
+        private String fallbackResponse;
     }
 
     public String getServiceId() {
